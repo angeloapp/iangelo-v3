@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iAngelo V3.0.1 - Busqueda Inteligente</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0a0f1e; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .logo { font-size: 32px; font-weight: bold; margin: 40px 0; color: #00d4ff; }
+        .search-container { width: 100%; max-width: 700px; margin: 60px auto; }
+        #searchInput { width: 100%; padding: 18px 24px; font-size: 16px; border: 2px solid #00d4ff; border-radius: 50px; background: rgba(255,255,255,0.05); color: #fff; outline: none; }
+        #submitBtn { margin-top: 20px; padding: 14px 32px; background: #00d4ff; color: #000; border: none; border-radius: 30px; font-size: 16px; cursor: pointer; font-weight: 600; }
+        #result { margin-top: 40px; padding: 30px; background: rgba(255,255,255,0.05); border-radius: 20px; max-width: 800px; }
+        .source { margin-top: 20px; padding: 10px; background: rgba(0, 212, 255, 0.1); border-radius: 10px; }
+        .source-link { color: #00d4ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="logo">iAngelo V3.0.1</div>
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Pregunta algo..." />
+        <button id="submitBtn">Buscar</button>
+    </div>
+    <div id="result"></div>
+    <script>
+        const searchBtn = document.getElementById('submitBtn');
+        const searchInput = document.getElementById('searchInput');
+        const resultDiv = document.getElementById('result');
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        searchBtn.addEventListener('click', performSearch);
+
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            resultDiv.innerHTML = '<p>Buscando...</p>';
+
+            try {
+                const res = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await res.json();
+
+                if (data.answer) {
+                    let html = `<h2>Respuesta:</h2><p>${data.answer.replace(/\n/g, '<br>')}</p>`;
+                    
+                    if (data.sources && data.sources.length > 0) {
+                        html += '<h3 style="margin-top: 30px;">Fuentes:</h3>';
+                        data.sources.forEach((src, i) => {
+                            html += `<div class="source"><strong>[${i+1}] ${src.title}</strong><br><a href="${src.url}" target="_blank" class="source-link">${src.url}</a></div>`;
+                        });
+                    }
+
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<p>No se encontraron resultados.</p>';
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
